@@ -1,5 +1,23 @@
-{
-    "version": 2,
-    "builds": [{"src": "./app.js", "use": "@vercel/node"}],
-    "routes": [{"src": "/(.*)", "dest": "/"}]
-}
+const express = require('express');
+const mongoose = require('mongoose');
+const path = require('path');
+require('dotenv').config();
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error(err));
+
+app.use(express.urlencoded({ extended: true }));  // Parse URL-encoded bodies
+app.use(express.json());  // Parse JSON bodies
+app.use(express.static(path.join(__dirname, 'public')));
+app.set('view engine', 'ejs');
+
+const indexRoutes = require('./routes/index');
+app.use('/', indexRoutes);
+
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+});
