@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
         day: 'numeric'
     });
 
-    res.render('index', {
+    res.render('index.ejs', {
         date,
         tasks,
         totalTasks,
@@ -43,7 +43,6 @@ router.post('/tasks/add', async (req, res) => {
 
 
 router.patch('/tasks/complete/:id', async (req, res) => {
-    console.log('Task ID:', req.params.id);
     try {
         const task = await Task.findById(req.params.id);
         if (!task) {
@@ -53,7 +52,6 @@ router.patch('/tasks/complete/:id', async (req, res) => {
         await task.save();
         res.json({ success: true });
     } catch (error) {
-        console.error('Error updating task:', error);
         res.json({ success: false, error });
     }
 });
