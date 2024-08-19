@@ -3,11 +3,9 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const path = require('path');
 const app = express();
-require('dotenv').config()
+require('dotenv').config();
 
-mongoose.connect(process.env.DB_URL)
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.log(err));
+mongoose.connect(process.env.DB_URL);
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
