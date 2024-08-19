@@ -1,52 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diaryku</title>
-    <link rel="stylesheet" href="/css/styles.css">
-</head>
-<body>
-    <div class="overlay"></div>
-    <div class="container">
-        <div class="header">
-            <h1>Diaryku</h1>
-            <p class="date"><%= date %></p>
-            <button class="dark-mode-toggle">🌙</button>
-        </div>
-        <div class="task-list">
-            <% tasks.forEach(function(task, index) { %>
-                <div class="task <%= task.completed ? 'completed' : '' %>" data-task-id="<%= task._id %>">
-                    <input type="checkbox" class="checkbox-task" id="task<%= task._id %>" <%= task.completed ? 'checked' : '' %> onclick="toggleTaskCompletion('<%= task._id %>')">
-                    <button type="button" class="delete-task" onclick="deleteTask('<%= task._id %>')">x</button>
-                    <label for="task<%= task._id %>" class="task-label"><%= task.name %></label>
-                    <span class="task-category">Tasks</span>
-                </div>
-            <% }); %>
-        </div>
-        <div class="progress-bar">
-            <div class="progress" style="width: <%= progress %>"></div>
-        </div>
-        <div class="task-counter">
-            <p>Completed: <span id="completed-count"><%= completedTasks %></span> / <span id="total-count"><%= totalTasks %></span></p>
-        </div>
-        <div>
-            <h3>Made with ❤️ by Syam</h3>
-            <h4>smart solution to manage your day</h4>
-        </div>
-    </div>
-    <button class="fab" onclick="openModal()">+</button>
-    <div class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <form action="/tasks/add" method="POST" id="add-task-form">
-                <input type="text" name="taskName" id="new-task-input" placeholder="Add a task" required>
-                <button type="submit" class="add-task-button">Add Task</button>
-            </form>
-            
-        </div>
-    </div>
-    
-    <script src="/js/script.js"></script>
-</body>
-</html>
+const express = require('express');
+const router = express.Router();
+const Task = require('../models/taskSchema');
+
+router.get('/', async (req, res) => {
+    const tasks = await Task.find();
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(task => task.completed).length;
+    const progress = totalTasks ? (completedTasks / totalTasks) * 100 : 0;
+
+    const date = new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    res.render('index.ejs', {
+        date,
+        tasks,
+        totalTasks,
+        completedTasks,
+        progress
+    });
+});
+
+
+router.post('/tasks/add', async (req, res) => {
+    const { taskName } = req.body;
+
+    if (taskName) {
+        const newTask = new Task({
+            name: taskName,
+            completed: false
+        });
+
+        await newTask.save();  
+        res.redirect('/'); 
+    } else {
+        res.json({ success: false, error: 'Task name is required' });
+    }
+});
+
+
+router.patch('/tasks/complete/:id', async (req, res) => {
+    try {
+        const task = await Task.findById(req.params.id);
+        if (!task) {
+            return res.json({ success: false, error: 'Task not found' });
+        }
+        task.completed = !task.completed;
+        await task.save();
+        res.json({ success: true });
+    } catch (error) {
+        res.json({ success: false, error });
+    }
+});
+
+
+
+
+// Route to delete a task
+router.delete('/tasks/delete/:id', async (req, res) => {
+    try {
+        await Task.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (error) {
+        res.json({ success: false, error });
+    }
+});
+
+module.exports = router;
